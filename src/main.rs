@@ -3,19 +3,23 @@ mod lexing;
 use lexing::lexer::lex_program;
 use lexing::token::Token;
 use std::env;
+use std::fs;
 
 fn process_args() -> Option<String> {
     let args: Vec<String> = env::args().collect();
-    let mut optional_program: Option<String> = None;
+    let mut file_path: Option<String> = None;
     if args.len() == 2 {
-        optional_program = Some(args[1].clone());
+        file_path = Some(args[1].clone());
     }
-    return optional_program;
+    return file_path;
 }
 
 //file input (make sure to actually extract the text from the file)
-fn run_file(program: &str) {
-    let tokens: Vec<Token> = lex_program(program);
+fn run_file(program_file: &str) {
+    let bytes = fs::read(program_file);
+    let bytes = bytes.ok().unwrap();
+    let program = String::from_utf8_lossy(&bytes);
+    let tokens: Vec<Token> = lex_program(&program);
 
     for token in tokens.iter() {
         println!("{:?}", token);
@@ -38,8 +42,8 @@ fn run_prompt() {
 }
 
 fn main() {
-    let program: Option<String> = process_args();
-    match program {
+    let program_file: Option<String> = process_args();
+    match program_file {
         Some(p) => run_file(&p),
         None => run_prompt(),
     }
