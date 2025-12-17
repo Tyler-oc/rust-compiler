@@ -5,6 +5,15 @@ use lexing::token::Token;
 use std::env;
 use std::fs;
 
+//note the max line is u32 max, so don't write a program with 4 million lines
+pub fn error(line: &u32, message: &str) {
+    report(line, "", message);
+}
+
+fn report(line: &u32, where_at: &str, message: &str) {
+    panic!("Error on line {line} at {where_at}: {message}");
+}
+
 fn process_args() -> Option<String> {
     let args: Vec<String> = env::args().collect();
     let mut file_path: Option<String> = None;
@@ -14,7 +23,7 @@ fn process_args() -> Option<String> {
     return file_path;
 }
 
-//file input (make sure to actually extract the text from the file)
+//file input
 fn run_file(program_file: &str) {
     let bytes = fs::read(program_file);
 
@@ -27,7 +36,7 @@ fn run_file(program_file: &str) {
             }
         }
         Err(e) => {
-            println!("Error reading the specified path");
+            println!("Error: {e}");
         }
     }
 }
