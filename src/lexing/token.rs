@@ -6,6 +6,18 @@ pub enum Token {
     Print(String),
     If(String),
     Else(String),
+    For(String),
+    While(String),
+    Null(String),
+
+    //boolean operators
+    And(String),
+    Or(String),
+    True(bool),
+    False(bool),
+
+    //function
+    Fun(String),
 
     //literal
     IntegerLiteral(i32),
@@ -46,6 +58,14 @@ impl Token {
             "Print" => Token::Print("print".to_string()),
             "If" => Token::If("if".to_string()),
             "Else" => Token::Else("else".to_string()),
+            "For" => Token::For("for".to_string()),
+            "While" => Token::While("while".to_string()),
+            "Null" => Token::Null("null".to_string()),
+            "And" => Token::And("and".to_string()),
+            "Or" => Token::Or("or".to_string()),
+            "True" => Token::True(true),
+            "False" => Token::False(false),
+            "Fun" => Token::Fun("fun".to_string()),
             "IntegerLiteral" => Token::IntegerLiteral(match value {
                 Some(v) => v.parse::<i32>().unwrap(),
                 None => panic!("IntegerLiteral missing value"),
@@ -82,12 +102,20 @@ impl Token {
 
     pub fn get_token_regex(token_type: &str) -> String {
         match token_type {
-            "Print" => r"print",
-            "If" => r"if",
-            "Else" => r"else",
+            "Print" => r"\bprint\b",
+            "If" => r"\bif\b",
+            "Else" => r"\belse\b",
+            "For" => r"\bfor\b",
+            "While" => r"\bwhile\b",
+            "Null" => r"\bnull\b",
+            "And" => r"\band\b",
+            "Or" => r"\bor\b",
+            "True" => r"\btrue\b",
+            "False" => r"\bfalse\b",
+            "Fun" => r"\bfun\b",
             "IntegerLiteral" => r"\d+",
-            "StringLiteral" => r#"\".*\""#,
-            "Identifier" => r"[a-zA-Z_][a-zA-Z0-9_]* =",
+            "StringLiteral" => r#""([^"\\]|\\.)*""#,
+            "Identifier" => r"[a-zA-Z_][a-zA-Z0-9_]*",
             "Plus" => r"\+",
             "Minus" => r"\-",
             "Dot" => r"\.",
@@ -101,8 +129,8 @@ impl Token {
             "RightBrace" => r"\}",
             "GreaterThan" => r">",
             "LessThan" => r"<",
-            "GreaterEqual" => r"\<=",
-            "LessEqual" => r"\<=",
+            "GreaterEqual" => r">=",
+            "LessEqual" => r"<=",
             "Bang" => r"\!",
             "BangEqual" => r"\!=",
             "EqualEqual" => r"==",
