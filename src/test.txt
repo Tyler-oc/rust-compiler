@@ -1,8 +1,19 @@
-int a = 5;
-int b = 6;
 
-if (a > b) {
-    print("A is larger than B");
-} else {
-    print("B is larger than A);
+class test {
+    name;
+    age;
+
+    fun test(name, age) {
+        this.name = name;
+        this.age = age;
+    }
+
+    fun foo(a, b){
+        if (a <= b) {
+            print("A is larger than or equal to B");
+        } else {
+            print("B is greater than A");
+        }
+    }
 }
+
