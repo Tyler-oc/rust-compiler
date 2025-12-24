@@ -1,5 +1,3 @@
-use std::thread::current;
-
 use crate::lexing::token::Token;
 use regex::Regex;
 

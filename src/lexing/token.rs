@@ -8,9 +8,8 @@ pub enum Token {
     For(String),
     While(String),
     Null(String),
-    And(String), //can switch to && later
-    Or(String),  //can switch to || later
-    True(bool),
+    And(String),
+    Or(String),
     False(bool),
     Fun(String),
     Class(String),
@@ -21,6 +20,7 @@ pub enum Token {
     //literal
     IntegerLiteral(i32),
     StringLiteral(String),
+    Boolean(bool),
 
     //identifiers
     Identifier(String),
@@ -62,8 +62,8 @@ impl Token {
             "Null" => Ok(Token::Null("null".to_string())),
             "And" => Ok(Token::And("and".to_string())),
             "Or" => Ok(Token::Or("or".to_string())),
-            "True" => Ok(Token::True(true)),
-            "False" => Ok(Token::False(false)),
+            "True" => Ok(Token::Boolean(true)),
+            "False" => Ok(Token::Boolean(false)),
             "Fun" => Ok(Token::Fun("fun".to_string())),
             "Class" => Ok(Token::Class("class".to_string())),
             "Super" => Ok(Token::Super("super".to_string())),
@@ -113,8 +113,7 @@ impl Token {
             "Null" => Ok(r"\bnull\b".to_string()),
             "And" => Ok(r"\band\b".to_string()),
             "Or" => Ok(r"\bor\b".to_string()),
-            "True" => Ok(r"\btrue\b".to_string()),
-            "False" => Ok(r"\bfalse\b".to_string()),
+            "Boolean" => Ok(r"\b(true|false)\b".to_string()),
             "Fun" => Ok(r"\bfun\b".to_string()),
             "Class" => Ok(r"\bclass\b".to_string()),
             "Super" => Ok(r"\bsuper\b".to_string()),

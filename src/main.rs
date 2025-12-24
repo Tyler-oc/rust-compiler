@@ -1,5 +1,6 @@
 mod errors;
 mod lexing;
+mod parsing;
 
 use lexing::lexer::lex_program;
 use lexing::token::Token;
