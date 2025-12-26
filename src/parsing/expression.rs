@@ -8,4 +8,21 @@ pub enum Expr {
     Literal(Token), //expect this to be a string, int, or boolean tokens
 }
 
-impl Expr {}
+impl Expr {
+
+    pub fn print_AST(self) -> () {
+        match self {
+            Expr::Binary(left, op, right) => ,
+            Expr::Unary(e, op) => ,
+            Expr::Grouping(e) => ,
+            Expr::Literal(t) => {
+                t match {
+                    Token::IntegerLiteral(i) => ,
+                    Token::StringLiteral(s) => ,
+                    Token::Boolean(b) => ,
+                    Token::Null(_) => ,
+                }
+            },
+        }
+    }
+}
