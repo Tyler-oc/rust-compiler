@@ -28,7 +28,7 @@ pub enum Token {
     //operators
     Plus(String),
     Minus(String),
-    Dot(String),
+    Dot(String), //property calls
     Slash(String),
     Star(String),
     Assign(String),
