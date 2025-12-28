@@ -1,27 +1,26 @@
-use std::iter;
-
-use crate::lexing::token::Token;
 #[derive(Debug)]
 pub enum Expr {
     //remember to change Box to Rc (shared ownership) or Arc (multi thread)
-    Binary{
+    Binary {
         left: Box<Expr>,
         op: BinaryOp,
-        right: Box<Expr>
+        right: Box<Expr>,
     },
-    Unary{
+    Unary {
         exp: Box<Expr>,
-        op: UnaryOp
+        op: UnaryOp,
     },
-    Grouping{exp: Box<Expr>},
-    Literal(Value), //expect this to be a string, int, or boolean tokens
+    Grouping {
+        exp: Box<Expr>,
+    },
+    Literal(Literal), //expect this to be a string, int, or boolean tokens
 }
 
 #[derive(Debug)]
 pub enum BinaryOp {
     Plus,
     Minus,
-    Star, 
+    Star,
     Slash,
     Equal,
     GreaterEqual,
@@ -32,6 +31,32 @@ pub enum BinaryOp {
     LessThan,
     And,
     Or,
+}
+
+#[derive(Debug)]
+pub enum UnaryOp {
+    Bang,
+}
+
+#[derive(Debug)]
+pub enum Literal {
+    IntegerLiteral(i32),
+    StringLiteral(String),
+    Null,
+    Boolean(bool),
+}
+
+//display implementations for enums
+
+impl std::fmt::Display for Expr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            Expr::Binary { left, op, right } => ,
+            Expr::Unary { exp, op } => ,
+            Expr::Grouping { exp } => ,
+            Expr::Literal(val) => ,
+        }
+    }
 }
 
 impl std::fmt::Display for BinaryOp {
@@ -55,11 +80,6 @@ impl std::fmt::Display for BinaryOp {
     }
 }
 
-#[derive(Debug)]
-pub enum UnaryOp {
-    Bang,
-}
-
 impl std::fmt::Display for UnaryOp {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s = match self {
@@ -69,45 +89,14 @@ impl std::fmt::Display for UnaryOp {
     }
 }
 
-impl Expr {
-
-    
-
-    pub fn print_AST(self) -> () {
-        match self {
-            Expr::Binary(left, op, right) => ,
-            Expr::Unary(e, op) => ,
-            Expr::Grouping(e) => ,
-            Expr::Literal(t) => {
-                t match {
-                    Token::IntegerLiteral(i) => ,
-                    Token::StringLiteral(s) => ,
-                    Token::Boolean(b) => ,
-                    Token::Null(_) => ,
-                }
-            },
-        }
-    }
-
-    fn parenthesize(name: String, exprs: Vec<Expr>) -> String {
-        result = "(";
-        for exp in exprs.iter() {
-            result.push(" ");
-            result.push_str(exp.get_string())
-        }
-        result.push(")");
-        return result;
-    }
-
-    fn get_string(exp: Expr) -> String {
-        match exp {
-            Expr::Binary(l, op, r) => return parenthesize(op)
-        }
-    }
-
-    fn parse_binary_op(token: &Token) -> BinaryOp {
-        match token.kind {
-            
-        }
+impl std::fmt::Display for Literal {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            Literal::IntegerLiteral(val) => val.to_string(),
+            Literal::StringLiteral(val) => val.to_string(),
+            Literal::Null => "NULL".to_string(),
+            Literal::Boolean(val) => val.to_string(),
+        };
+        write!(f, "{}", s)
     }
 }
