@@ -50,11 +50,22 @@ pub enum Literal {
 
 impl std::fmt::Display for Expr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let s = match self {
-            Expr::Binary { left, op, right } => ,
-            Expr::Unary { exp, op } => ,
-            Expr::Grouping { exp } => ,
-            Expr::Literal(val) => ,
+        match self {
+            Expr::Binary { left, op, right } => {
+                write!(f, "{}", left);
+                write!(f, "{}", op);
+                write!(f, "{}", right)
+            }
+            Expr::Unary { exp, op } => {
+                write!(f, "{}", op);
+                write!(f, "{}", exp)
+            }
+            Expr::Grouping { exp } => {
+                write!(f, "({})", exp)
+            }
+            Expr::Literal(val) => {
+                write!(f, "{}", val)
+            }
         }
     }
 }
