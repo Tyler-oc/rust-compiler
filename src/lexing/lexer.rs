@@ -119,6 +119,17 @@ impl<'a> Lexer<'a> {
 
     fn scan_token(&mut self) {
         let c = self.advance();
+
+        match c {
+            '(' => self.add_token(Token::LeftParen),
+            ')' => self.add_token(Token::RightParen),
+            '{' => self.add_token(Token::LeftBrace),
+            '}' => self.add_token(Token::RightBrace),
+            '+' => self.add_token(Token::Plus),
+            '-' => self.add_token(Token::Minus),
+            '/' => self.add_token(Token::Slash),
+            '*' => self.add_token(Token::Star),
+        }
     }
 }
 
