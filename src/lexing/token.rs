@@ -17,7 +17,7 @@ pub enum Token {
     This,
 
     //literal
-    IntegerLiteral(i32),
+    Number(f64),
     StringLiteral(String),
     Boolean(bool),
 

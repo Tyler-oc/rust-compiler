@@ -1,12 +1,12 @@
 use std::error::Error;
 use std::fmt;
-
 #[derive(Debug)]
 pub enum LexError {
     NotFound(String),
     ValueError(String),
     UnexpectedCharacter { char: char, line: usize },
     UnterminatedString { line: usize },
+    NumberParsingError { num_str: String, line: usize },
 }
 
 impl fmt::Display for LexError {
@@ -19,6 +19,9 @@ impl fmt::Display for LexError {
             }
             LexError::UnterminatedString { line } => {
                 write!(f, "unterminated string at line: {}", line)
+            }
+            LexError::NumberParsingError { num_str, line } => {
+                write!(f, "failed to parse double: {} on line {}", num_str, line)
             }
         }
     }

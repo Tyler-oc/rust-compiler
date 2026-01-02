@@ -118,6 +118,13 @@ impl<'a> Lexer<'a> {
         c
     }
 
+    fn peek_next(&mut self) -> char {
+        if self.current + 1 >= self.source.len() {
+            return '\0';
+        }
+        self.source.as_bytes()[self.current + 1] as char
+    }
+
     fn match_char(&mut self, c: char) -> bool {
         if self.is_at_end() {
             return false;
@@ -134,6 +141,10 @@ impl<'a> Lexer<'a> {
 
     fn increment_line(&mut self) {
         self.line += 1
+    }
+
+    fn is_digit(&mut self, c: char) -> bool {
+        return c >= '0' && c <= '9';
     }
 
     fn string(&mut self) -> Result<(), LexError> {
@@ -153,6 +164,34 @@ impl<'a> Lexer<'a> {
         let value = &self.source[self.start + 1..self.current - 1]; //note this only works if all values are ASCII, which is assumed. Panics otherwise
 
         self.add_token(Token::StringLiteral(value.to_string()));
+        Ok(())
+    }
+
+    fn number(&mut self) -> Result<(), LexError> {
+        while self.is_digit(self.peek()) {
+            self.advance();
+        }
+
+        if self.peek() == '.' && self.is_digit(self.peek_next()) {
+            self.advance();
+
+            while self.is_digit(self.peek()) {
+                self.advance();
+            }
+        }
+
+        let num_str = &self.source[self.start..self.current];
+        let parsed_num: Result<f64, LexError> = match num_str.parse() {
+            Ok(num) => Ok(num),
+            Err(_) => Err(LexError::NumberParsingError {
+                num_str: num_str.to_string(),
+                line: self.line,
+            }),
+        };
+        match parsed_num {
+            Ok(val) => self.add_token(Token::Number(val)),
+            Err(e) => return Err(e),
+        };
         Ok(())
     }
 
@@ -223,10 +262,14 @@ impl<'a> Lexer<'a> {
             '\t' => (),
             ' ' => (),
             _ => {
-                return Err(LexError::UnexpectedCharacter {
-                    char: c,
-                    line: self.line,
-                });
+                if self.is_digit(c) {
+                    self.number();
+                } else {
+                    return Err(LexError::UnexpectedCharacter {
+                        char: c,
+                        line: self.line,
+                    });
+                }
             }
         };
         Ok(())
