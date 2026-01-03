@@ -40,7 +40,7 @@ pub enum UnaryOp {
 
 #[derive(Debug)]
 pub enum Literal {
-    IntegerLiteral(i32),
+    Number(f64),
     StringLiteral(String),
     Null,
     Boolean(bool),
@@ -103,7 +103,7 @@ impl std::fmt::Display for UnaryOp {
 impl std::fmt::Display for Literal {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s = match self {
-            Literal::IntegerLiteral(val) => val.to_string(),
+            Literal::Number(val) => val.to_string(),
             Literal::StringLiteral(val) => val.to_string(),
             Literal::Null => "NULL".to_string(),
             Literal::Boolean(val) => val.to_string(),

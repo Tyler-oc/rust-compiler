@@ -1,6 +1,6 @@
 use crate::{errors::lexError::LexError, lexing::token::Token};
 use once_cell::sync::Lazy;
-use std::{clone, collections::HashMap, ptr::null};
+use std::collections::HashMap;
 
 static KEYWORDS: Lazy<HashMap<&'static str, Token>> = Lazy::new(|| {
     let mut m = HashMap::new();
@@ -211,7 +211,11 @@ impl<'a> Lexer<'a> {
             ' ' => (),
             _ => {
                 if is_digit(c) {
-                    self.number();
+                    let result = self.number();
+                    match result {
+                        Ok(_) => (),
+                        Err(e) => return Err(e),
+                    }
                 } else if is_alpha(c) {
                     self.identifier();
                 } else {
