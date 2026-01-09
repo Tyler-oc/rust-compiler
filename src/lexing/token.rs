@@ -1,5 +1,5 @@
 use crate::errors::lex_error::LexError;
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Token {
     //keywords
     Print,

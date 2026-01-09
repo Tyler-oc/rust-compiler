@@ -17,8 +17,8 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn peek(&mut self) -> Token {
-        self.tokens[self.current].clone()
+    fn peek(&mut self) -> &Token {
+        &self.tokens[self.current]
     }
 
     fn is_at_end(&mut self) -> bool {
@@ -28,28 +28,22 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn previous(&mut self) -> Result<&Token, ParseError> {
-        match self.tokens.get(self.current - 1) {
-            Some(t) => Ok(t),
-            None => Err(ParseError::IndexOutOfBounds),
-        }
+    fn previous(&mut self) -> &Token {
+        &self.tokens[self.current - 1]
     }
 
-    fn advance(&mut self) -> Result<&Token, ParseError> {
+    fn advance(&mut self) -> &Token {
         if !self.is_at_end() {
             self.current += 1;
         }
-        match self.previous() {
-            Ok(t) => Ok(t),
-            Err(e) => Err(e),
-        }
+        self.previous()
     }
 
     fn check(&mut self, token_type: Token) -> bool {
         if self.is_at_end() {
             return false;
         }
-        return self.peek() == token_type;
+        return self.peek().clone() == token_type;
     }
 
     fn match_token(&mut self, token_types: Vec<Token>) -> bool {
@@ -63,11 +57,57 @@ impl<'a> Parser<'a> {
         return false;
     }
 
-    fn equality(&mut self) -> Expr {
+    fn term(&mut self) -> Result<Expr, ParseError> {
+        let mut expr: Expr = self.factor();
+
+        while self.match_token(vec![Token::Minus, Token::Plus]) {
+            let operator: BinaryOp = match parse_binary_op(self.previous()) {
+                Ok(b) => b,
+                Err(e) => return Err(e),
+            };
+            let right: Expr = self.factor();
+            expr = Expr::Binary {
+                left: expr,
+                op: operator,
+                right: right,
+            }
+        }
+
+        Ok(expr)
+    }
+
+    fn comparison(&mut self) -> Result<Expr, ParseError> {
+        let mut expr: Expr = self.term();
+
+        while self.match_token(vec![
+            Token::GreaterEqual,
+            Token::GreaterThan,
+            Token::LessEqual,
+            Token::LessThan,
+        ]) {
+            let operator: BinaryOp = match parse_binary_op(self.previous()) {
+                Ok(b) => b,
+                Err(e) => return Err(e),
+            };
+            let right: Expr = self.term();
+            expr = Expr::Binary {
+                left: expr,
+                op: operator,
+                right: right,
+            }
+        }
+
+        Ok(expr)
+    }
+
+    fn equality(&mut self) -> Result<Expr, ParseError> {
         let mut expr: Expr = self.comparison();
 
-        while match_token(Token::EqualEqual..Token::BangEqual) {
-            let operator: Token = self.previous();
+        while self.match_token(vec![Token::EqualEqual, Token::BangEqual]) {
+            let operator: &Token = match parse_binary_op(self.previous()) {
+                Ok(b) => b,
+                Err(e) => return Err(e),
+            };
             let right: Expr = self.comparison();
             expr = Expr::Binary {
                 left: expr,
@@ -76,7 +116,7 @@ impl<'a> Parser<'a> {
             }
         }
 
-        expr
+        Ok(expr)
     }
 
     pub fn parse(&mut self) -> Expr {
