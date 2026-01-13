@@ -11,9 +11,8 @@ use crate::errors::interpreter_error::InterpreterError;
 use crate::parsing::ast::Expr;
 use crate::parsing::parser::parse_tokens;
 
-//error handling but make sure to pass in specific errors which are defined in the errors crate.
 pub fn error(e: InterpreterError) {
-    e;
+    println!("{}", e);
 }
 
 fn process_args() -> Option<String> {
@@ -37,7 +36,8 @@ fn run_file(program_file: &str) -> Result<(), InterpreterError> {
                 println!("{:?}", token);
             }
             let expr: Expr = parse_tokens(&tokens)?;
-            print!("{}", expr);
+            print!("expression: {}", expr);
+            println!("{:#?}", expr);
         }
         Err(e) => {
             println!("Error: {e}");
@@ -47,7 +47,7 @@ fn run_file(program_file: &str) -> Result<(), InterpreterError> {
 }
 
 //CLI listening
-fn run_prompt() {
+fn run_prompt() -> Result<(), InterpreterError> {
     let mut input = String::new();
 
     std::io::stdin()
@@ -65,6 +65,12 @@ fn run_prompt() {
     for token in tokens.iter() {
         println!("{:?}", token);
     }
+
+    let expr: Expr = parse_tokens(&tokens)?;
+    print!("expression: {}", expr);
+    println!("{:#?}", expr);
+
+    Ok(())
 }
 
 fn main() {
@@ -74,6 +80,9 @@ fn main() {
             Ok(_) => (),
             Err(e) => error(e),
         },
-        None => run_prompt(),
+        None => match run_prompt() {
+            Ok(_) => (),
+            Err(e) => error(e),
+        },
     }
 }

@@ -54,16 +54,13 @@ impl std::fmt::Display for Expr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Expr::Binary { left, op, right } => {
-                write!(f, "{}", left);
-                write!(f, "{}", op);
-                write!(f, "{}", right)
+                write!(f, "({}{}{})", left, op, right)
             }
             Expr::Unary { exp, op } => {
-                write!(f, "{}", op);
-                write!(f, "{}", exp)
+                write!(f, "({}{})", op, exp)
             }
             Expr::Grouping { exp } => {
-                write!(f, "({})", exp)
+                write!(f, "(group {})", exp)
             }
             Expr::Literal(val) => {
                 write!(f, "{}", val)

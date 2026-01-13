@@ -1,19 +1,6 @@
 
-class test {
-    name;
-    age;
-
-    fun test(name, age) {
-        this.name = name;
-        this.age = age;
-    }
-
-    fun foo(a, b){
-        if (a <= b) {
-            print("A is larger than or equal to B");
-        } else {
-            print("B is greater than A");
-        }
-    }
-}
+10 + 20;
+10 * 20;
+10 <= 20;
+10 >= 20;
 

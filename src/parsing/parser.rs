@@ -57,8 +57,28 @@ impl<'a> Parser<'a> {
         return false;
     }
 
+    fn synchronize(&mut self) -> () {
+        self.advance();
+
+        while !self.is_at_end() {
+            match self.previous() {
+                &Token::Semicolon => return (),
+                &Token::Class => return (),
+                &Token::Fun => return (),
+                &Token::Var => return (),
+                &Token::For => return (),
+                &Token::If => return (),
+                &Token::While => return (),
+                &Token::Print => return (),
+                &Token::Return => return (),
+                _ => (),
+            }
+            self.advance();
+        }
+    }
+
     fn consume(&mut self, token_type: Token, message: String) -> Result<&Token, ParseError> {
-        if self.match_token(vec![token_type]) {
+        if self.check(token_type) {
             return Ok(self.advance());
         }
         Err(ParseError::InvalidGrouping(message))
@@ -70,7 +90,10 @@ impl<'a> Parser<'a> {
                 Ok(e) => e,
                 Err(err) => return Err(err),
             };
-            self.consume(Token::RightParen, "Expect ')' after expression".to_string());
+            match self.consume(Token::RightParen, "Expect ')' after expression".to_string()) {
+                Ok(_) => (),
+                Err(e) => return Err(e),
+            };
             return Ok(Expr::Grouping {
                 exp: Box::new(expr),
             });
