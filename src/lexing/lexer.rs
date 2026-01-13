@@ -1,25 +1,29 @@
-use crate::{errors::lex_error::LexError, lexing::token::Token};
+use crate::{
+    errors::lex_error::LexError,
+    lexing::token::{Token, TokenKind},
+    parsing::ast::Literal,
+};
 use once_cell::sync::Lazy;
 use std::collections::HashMap;
 
-static KEYWORDS: Lazy<HashMap<&'static str, Token>> = Lazy::new(|| {
+static KEYWORDS: Lazy<HashMap<&'static str, TokenKind>> = Lazy::new(|| {
     let mut m = HashMap::new();
-    m.insert("and", Token::And);
-    m.insert("class", Token::Class);
-    m.insert("else", Token::Else);
-    m.insert("false", Token::False);
-    m.insert("for", Token::For);
-    m.insert("fun", Token::Fun);
-    m.insert("if", Token::If);
-    m.insert("null", Token::Null);
-    m.insert("or", Token::Or);
-    m.insert("print", Token::Print);
-    m.insert("return", Token::Return);
-    m.insert("super", Token::Super);
-    m.insert("this", Token::This);
-    m.insert("true", Token::True);
-    m.insert("var", Token::Var);
-    m.insert("while", Token::While);
+    m.insert("and", TokenKind::And);
+    m.insert("class", TokenKind::Class);
+    m.insert("else", TokenKind::Else);
+    m.insert("false", TokenKind::False);
+    m.insert("for", TokenKind::For);
+    m.insert("fun", TokenKind::Fun);
+    m.insert("if", TokenKind::If);
+    m.insert("null", TokenKind::Null);
+    m.insert("or", TokenKind::Or);
+    m.insert("print", TokenKind::Print);
+    m.insert("return", TokenKind::Return);
+    m.insert("super", TokenKind::Super);
+    m.insert("this", TokenKind::This);
+    m.insert("true", TokenKind::True);
+    m.insert("var", TokenKind::Var);
+    m.insert("while", TokenKind::While);
     m
 });
 
@@ -74,8 +78,15 @@ impl<'a> Lexer<'a> {
         false
     }
 
-    fn add_token(&mut self, token: Token) {
-        self.tokens.push(token);
+    fn add_token(&mut self, kind: TokenKind, literal: Option<Literal>) {
+        let lexeme = self.source[self.start..self.current].to_string();
+
+        self.tokens.push(Token {
+            kind,
+            lexeme,
+            literal,
+            line: self.line,
+        })
     }
 
     fn increment_line(&mut self) {
@@ -98,7 +109,10 @@ impl<'a> Lexer<'a> {
 
         let value = &self.source[self.start + 1..self.current - 1]; //note this only works if all values are ASCII, which is assumed. Panics otherwise
 
-        self.add_token(Token::StringLiteral(value.to_string()));
+        self.add_token(
+            TokenKind::StringLiteral,
+            Some(Literal::StringLiteral(value.to_string())),
+        );
         Ok(())
     }
 
@@ -123,7 +137,7 @@ impl<'a> Lexer<'a> {
             }),
         };
         match parsed_num {
-            Ok(val) => self.add_token(Token::Number(val)),
+            Ok(val) => self.add_token(TokenKind::Number, Some(Literal::Number(val))),
             Err(e) => return Err(e),
         };
         Ok(())
@@ -135,12 +149,12 @@ impl<'a> Lexer<'a> {
         }
 
         let text = &self.source[self.start..self.current];
-        let token_type = match KEYWORDS.get(text) {
-            Some(t) => t,
-            None => &Token::Identifier(text.to_string()),
+        let kind = match KEYWORDS.get(text) {
+            Some(kind) => kind.clone(),
+            None => TokenKind::Identifier,
         };
 
-        self.add_token(token_type.clone());
+        self.add_token(kind, None);
     }
 
     fn scan_token(&mut self) -> Result<(), LexError> {
@@ -148,46 +162,46 @@ impl<'a> Lexer<'a> {
 
         match c {
             '\n' => self.increment_line(),
-            '(' => self.add_token(Token::LeftParen),
-            ')' => self.add_token(Token::RightParen),
-            '{' => self.add_token(Token::LeftBrace),
-            '}' => self.add_token(Token::RightBrace),
-            '+' => self.add_token(Token::Plus),
-            '-' => self.add_token(Token::Minus),
-            '*' => self.add_token(Token::Star),
-            '.' => self.add_token(Token::Dot),
-            ';' => self.add_token(Token::Semicolon),
-            ',' => self.add_token(Token::Comma),
+            '(' => self.add_token(TokenKind::LeftParen, None),
+            ')' => self.add_token(TokenKind::RightParen, None),
+            '{' => self.add_token(TokenKind::LeftBrace, None),
+            '}' => self.add_token(TokenKind::RightBrace, None),
+            '+' => self.add_token(TokenKind::Plus, None),
+            '-' => self.add_token(TokenKind::Minus, None),
+            '*' => self.add_token(TokenKind::Star, None),
+            '.' => self.add_token(TokenKind::Dot, None),
+            ';' => self.add_token(TokenKind::Semicolon, None),
+            ',' => self.add_token(TokenKind::Comma, None),
             '!' => {
                 if self.match_char('=') {
-                    self.add_token(Token::BangEqual);
+                    self.add_token(TokenKind::BangEqual, None);
                     self.advance();
                 } else {
-                    self.add_token(Token::Bang);
+                    self.add_token(TokenKind::Bang, None);
                 }
             }
             '=' => {
                 if self.match_char('=') {
-                    self.add_token(Token::EqualEqual);
+                    self.add_token(TokenKind::EqualEqual, None);
                     self.advance();
                 } else {
-                    self.add_token(Token::Equal);
+                    self.add_token(TokenKind::Equal, None);
                 }
             }
             '<' => {
                 if self.match_char('=') {
-                    self.add_token(Token::LessEqual);
+                    self.add_token(TokenKind::LessEqual, None);
                     self.advance();
                 } else {
-                    self.add_token(Token::LessThan);
+                    self.add_token(TokenKind::LessThan, None);
                 }
             }
             '>' => {
                 if self.match_char('=') {
-                    self.add_token(Token::GreaterEqual);
+                    self.add_token(TokenKind::GreaterEqual, None);
                     self.advance();
                 } else {
-                    self.add_token(Token::GreaterThan);
+                    self.add_token(TokenKind::GreaterThan, None);
                 }
             }
             '/' => {
@@ -196,7 +210,7 @@ impl<'a> Lexer<'a> {
                         self.advance();
                     }
                 } else {
-                    self.add_token(Token::Slash);
+                    self.add_token(TokenKind::Slash, None);
                 }
             }
             '"' => {
@@ -250,7 +264,7 @@ pub fn lex_program(source: &str) -> Result<Vec<Token>, LexError> {
         lexer.scan_token()?;
     }
 
-    lexer.add_token(Token::EOF);
+    lexer.add_token(TokenKind::EOF, None);
 
     Ok(lexer.tokens)
 }

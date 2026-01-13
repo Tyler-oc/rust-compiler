@@ -1,6 +1,14 @@
-use crate::errors::lex_error::LexError;
+use crate::{errors::lex_error::LexError, parsing::ast::Literal};
+#[derive(Clone, Debug)]
+pub struct Token {
+    pub kind: TokenKind,
+    pub lexeme: String,
+    pub literal: Option<Literal>,
+    pub line: usize,
+}
+
 #[derive(Clone, Debug, PartialEq)]
-pub enum Token {
+pub enum TokenKind {
     //keywords
     Print,
     If,
@@ -17,13 +25,13 @@ pub enum Token {
     This,
 
     //literal
-    Number(f64),
-    StringLiteral(String),
+    Number,
+    StringLiteral,
     True,
     False,
 
     //identifiers
-    Identifier(String),
+    Identifier,
     Var,
 
     //operators
@@ -53,63 +61,4 @@ pub enum Token {
 
     EOF,
 }
-
-impl std::fmt::Display for Token {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            // keywords
-            Token::Print => write!(f, "print"),
-            Token::If => write!(f, "if"),
-            Token::Else => write!(f, "else"),
-            Token::For => write!(f, "for"),
-            Token::While => write!(f, "while"),
-            Token::Null => write!(f, "null"),
-            Token::And => write!(f, "and"),
-            Token::Or => write!(f, "or"),
-            Token::Fun => write!(f, "fun"),
-            Token::Class => write!(f, "class"),
-            Token::Super => write!(f, "super"),
-            Token::Return => write!(f, "return"),
-            Token::This => write!(f, "this"),
-            Token::Var => write!(f, "var"),
-
-            // literals
-            Token::Number(n) => write!(f, "{}", n),
-            Token::StringLiteral(s) => write!(f, "\"{}\"", s),
-            Token::True => write!(f, "true"),
-            Token::False => write!(f, "false"),
-
-            // identifiers
-            Token::Identifier(name) => write!(f, "{}", name),
-
-            // operators
-            Token::Plus => write!(f, "+"),
-            Token::Minus => write!(f, "-"),
-            Token::Dot => write!(f, "."),
-            Token::Slash => write!(f, "/"),
-            Token::Star => write!(f, "*"),
-            Token::Equal => write!(f, "="),
-            Token::Comma => write!(f, ","),
-
-            // punctuation
-            Token::Semicolon => write!(f, ";"),
-            Token::LeftParen => write!(f, "("),
-            Token::RightParen => write!(f, ")"),
-            Token::LeftBrace => write!(f, "{{"),
-            Token::RightBrace => write!(f, "}}"),
-
-            // logical / comparison operators
-            Token::GreaterThan => write!(f, ">"),
-            Token::LessThan => write!(f, "<"),
-            Token::GreaterEqual => write!(f, ">="),
-            Token::LessEqual => write!(f, "<="),
-            Token::Bang => write!(f, "!"),
-            Token::BangEqual => write!(f, "!="),
-            Token::EqualEqual => write!(f, "=="),
-
-            Token::EOF => write!(f, "EOF"),
-        }
-    }
-}
-
 impl Token {}

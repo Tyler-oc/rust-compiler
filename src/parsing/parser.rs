@@ -1,6 +1,6 @@
 use crate::{
     errors::parse_error::ParseError,
-    lexing::token::Token,
+    lexing::token::{Token, TokenKind},
     parsing::ast::{BinaryOp, Expr, Literal, UnaryOp},
 };
 
@@ -22,8 +22,8 @@ impl<'a> Parser<'a> {
     }
 
     fn is_at_end(&mut self) -> bool {
-        match self.peek() {
-            Token::EOF => true,
+        match self.peek().kind {
+            TokenKind::EOF => true,
             _ => false,
         }
     }
@@ -39,14 +39,14 @@ impl<'a> Parser<'a> {
         self.previous()
     }
 
-    fn check(&mut self, token_type: Token) -> bool {
+    fn check(&mut self, token_type: TokenKind) -> bool {
         if self.is_at_end() {
             return false;
         }
-        return self.peek().clone() == token_type;
+        return self.peek().kind == token_type;
     }
 
-    fn match_token(&mut self, token_types: Vec<Token>) -> bool {
+    fn match_token(&mut self, token_types: Vec<TokenKind>) -> bool {
         for token_type in token_types {
             if self.check(token_type) {
                 self.advance();
@@ -61,23 +61,23 @@ impl<'a> Parser<'a> {
         self.advance();
 
         while !self.is_at_end() {
-            match self.previous() {
-                &Token::Semicolon => return (),
-                &Token::Class => return (),
-                &Token::Fun => return (),
-                &Token::Var => return (),
-                &Token::For => return (),
-                &Token::If => return (),
-                &Token::While => return (),
-                &Token::Print => return (),
-                &Token::Return => return (),
+            match self.previous().kind {
+                TokenKind::Semicolon => return (),
+                TokenKind::Class => return (),
+                TokenKind::Fun => return (),
+                TokenKind::Var => return (),
+                TokenKind::For => return (),
+                TokenKind::If => return (),
+                TokenKind::While => return (),
+                TokenKind::Print => return (),
+                TokenKind::Return => return (),
                 _ => (),
             }
             self.advance();
         }
     }
 
-    fn consume(&mut self, token_type: Token, message: String) -> Result<&Token, ParseError> {
+    fn consume(&mut self, token_type: TokenKind, message: String) -> Result<&Token, ParseError> {
         if self.check(token_type) {
             return Ok(self.advance());
         }
@@ -85,12 +85,15 @@ impl<'a> Parser<'a> {
     }
 
     fn primary(&mut self) -> Result<Expr, ParseError> {
-        if self.match_token(vec![Token::LeftParen]) {
+        if self.match_token(vec![TokenKind::LeftParen]) {
             let expr: Expr = match self.expression() {
                 Ok(e) => e,
                 Err(err) => return Err(err),
             };
-            match self.consume(Token::RightParen, "Expect ')' after expression".to_string()) {
+            match self.consume(
+                TokenKind::RightParen,
+                "Expect ')' after expression".to_string(),
+            ) {
                 Ok(_) => (),
                 Err(e) => return Err(e),
             };
@@ -106,7 +109,7 @@ impl<'a> Parser<'a> {
     }
 
     fn unary(&mut self) -> Result<Expr, ParseError> {
-        if self.match_token(vec![Token::Bang, Token::Minus]) {
+        if self.match_token(vec![TokenKind::Bang, TokenKind::Minus]) {
             let operator: UnaryOp = match parse_unary_op(self.previous()) {
                 Ok(b) => b,
                 Err(e) => return Err(e),
@@ -129,7 +132,7 @@ impl<'a> Parser<'a> {
             Err(err) => return Err(err),
         };
 
-        while self.match_token(vec![Token::Slash, Token::Star]) {
+        while self.match_token(vec![TokenKind::Slash, TokenKind::Star]) {
             let operator: BinaryOp = match parse_binary_op(self.previous()) {
                 Ok(b) => b,
                 Err(e) => return Err(e),
@@ -154,7 +157,7 @@ impl<'a> Parser<'a> {
             Err(err) => return Err(err),
         };
 
-        while self.match_token(vec![Token::Minus, Token::Plus]) {
+        while self.match_token(vec![TokenKind::Minus, TokenKind::Plus]) {
             let operator: BinaryOp = match parse_binary_op(self.previous()) {
                 Ok(b) => b,
                 Err(e) => return Err(e),
@@ -180,10 +183,10 @@ impl<'a> Parser<'a> {
         };
 
         while self.match_token(vec![
-            Token::GreaterEqual,
-            Token::GreaterThan,
-            Token::LessEqual,
-            Token::LessThan,
+            TokenKind::GreaterEqual,
+            TokenKind::GreaterThan,
+            TokenKind::LessEqual,
+            TokenKind::LessThan,
         ]) {
             let operator: BinaryOp = match parse_binary_op(self.previous()) {
                 Ok(b) => b,
@@ -209,7 +212,7 @@ impl<'a> Parser<'a> {
             Err(err) => return Err(err),
         };
 
-        while self.match_token(vec![Token::EqualEqual, Token::BangEqual]) {
+        while self.match_token(vec![TokenKind::EqualEqual, TokenKind::BangEqual]) {
             let operator: BinaryOp = match parse_binary_op(self.previous()) {
                 Ok(b) => b,
                 Err(e) => return Err(e),
@@ -248,20 +251,20 @@ pub fn parse_tokens(tokens: &Vec<Token>) -> Result<Expr, ParseError> {
 }
 
 pub fn parse_binary_op(token: &Token) -> Result<BinaryOp, ParseError> {
-    match token {
-        Token::And => Ok(BinaryOp::And),
-        Token::Or => Ok(BinaryOp::Or),
-        Token::Plus => Ok(BinaryOp::Plus),
-        Token::Minus => Ok(BinaryOp::Minus),
-        Token::Star => Ok(BinaryOp::Star),
-        Token::Slash => Ok(BinaryOp::Slash),
-        Token::GreaterEqual => Ok(BinaryOp::GreaterEqual),
-        Token::GreaterThan => Ok(BinaryOp::GreaterThan),
-        Token::EqualEqual => Ok(BinaryOp::EqualEqual),
-        Token::BangEqual => Ok(BinaryOp::BangEqual),
-        Token::LessEqual => Ok(BinaryOp::LessEqual),
-        Token::LessThan => Ok(BinaryOp::LessThan),
-        Token::Equal => Ok(BinaryOp::Equal),
+    match token.kind {
+        TokenKind::And => Ok(BinaryOp::And),
+        TokenKind::Or => Ok(BinaryOp::Or),
+        TokenKind::Plus => Ok(BinaryOp::Plus),
+        TokenKind::Minus => Ok(BinaryOp::Minus),
+        TokenKind::Star => Ok(BinaryOp::Star),
+        TokenKind::Slash => Ok(BinaryOp::Slash),
+        TokenKind::GreaterEqual => Ok(BinaryOp::GreaterEqual),
+        TokenKind::GreaterThan => Ok(BinaryOp::GreaterThan),
+        TokenKind::EqualEqual => Ok(BinaryOp::EqualEqual),
+        TokenKind::BangEqual => Ok(BinaryOp::BangEqual),
+        TokenKind::LessEqual => Ok(BinaryOp::LessEqual),
+        TokenKind::LessThan => Ok(BinaryOp::LessThan),
+        TokenKind::Equal => Ok(BinaryOp::Equal),
         _ => Err(ParseError::InvalidConversion(
             "could not convert to binary operator".to_string(),
         )), //figure out formatting later to enter to display tokens
@@ -269,8 +272,8 @@ pub fn parse_binary_op(token: &Token) -> Result<BinaryOp, ParseError> {
 }
 
 pub fn parse_unary_op(token: &Token) -> Result<UnaryOp, ParseError> {
-    match token {
-        Token::Bang => Ok(UnaryOp::Bang),
+    match token.kind {
+        TokenKind::Bang => Ok(UnaryOp::Bang),
         _ => Err(ParseError::InvalidConversion(
             "could not convert to unary operator".to_string(),
         )),
@@ -278,12 +281,18 @@ pub fn parse_unary_op(token: &Token) -> Result<UnaryOp, ParseError> {
 }
 
 pub fn parse_literal(token: &Token) -> Result<Literal, ParseError> {
-    match token {
-        Token::Number(i) => Ok(Literal::Number(*i)),
-        Token::StringLiteral(s) => Ok(Literal::StringLiteral(s.clone())),
-        Token::False => Ok(Literal::False),
-        Token::True => Ok(Literal::True),
-        Token::Null => Ok(Literal::Null),
+    match token.kind {
+        TokenKind::Number => match token.literal {
+            Some(l) => Ok(l),
+            None => Err(ParseError::MissingValue),
+        },
+        TokenKind::StringLiteral => match token.literal {
+            Some(l) => Ok(l),
+            None => Err(ParseError::MissingValue),
+        },
+        TokenKind::False => Ok(Literal::False),
+        TokenKind::True => Ok(Literal::True),
+        TokenKind::Null => Ok(Literal::Null),
         _ => Err(ParseError::InvalidConversion(
             "could not convert literal".to_string(),
         )),

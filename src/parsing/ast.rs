@@ -39,7 +39,7 @@ pub enum UnaryOp {
     Minus,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Literal {
     Number(f64),
     StringLiteral(String),
