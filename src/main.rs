@@ -1,4 +1,5 @@
 mod errors;
+mod interpreting;
 mod lexing;
 mod parsing;
 
@@ -7,11 +8,11 @@ use lexing::token::Token;
 use std::env;
 use std::fs;
 
-use crate::errors::interpreter_error::InterpreterError;
+use crate::errors::general_error::GeneralError;
 use crate::parsing::ast::Expr;
 use crate::parsing::parser::parse_tokens;
 
-pub fn error(e: InterpreterError) {
+pub fn error(e: GeneralError) {
     println!("{}", e);
 }
 
@@ -25,7 +26,7 @@ fn process_args() -> Option<String> {
 }
 
 //file input
-fn run_file(program_file: &str) -> Result<(), InterpreterError> {
+fn run_file(program_file: &str) -> Result<(), GeneralError> {
     let bytes = fs::read(program_file);
 
     match bytes {
@@ -47,7 +48,7 @@ fn run_file(program_file: &str) -> Result<(), InterpreterError> {
 }
 
 //CLI listening
-fn run_prompt() -> Result<(), InterpreterError> {
+fn run_prompt() -> Result<(), GeneralError> {
     let mut input = String::new();
 
     std::io::stdin()
@@ -57,7 +58,7 @@ fn run_prompt() -> Result<(), InterpreterError> {
     let tokens: Vec<Token> = match lex_program(&input) {
         Ok(tokens) => tokens,
         Err(e) => {
-            error(InterpreterError::LexError(e));
+            error(GeneralError::LexError(e));
             Vec::new()
         }
     };
