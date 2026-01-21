@@ -85,7 +85,6 @@ impl<'a> Parser<'a> {
     }
 
     fn primary(&mut self) -> Result<Expr, ParseError> {
-        println!("primary");
         if self.match_token(vec![TokenKind::LeftParen]) {
             let expr: Expr = match self.expression() {
                 Ok(e) => e,
@@ -102,15 +101,16 @@ impl<'a> Parser<'a> {
                 exp: Box::new(expr),
             });
         }
-
         match parse_literal(self.peek()) {
-            Ok(l) => Ok(Expr::Literal(l)),
+            Ok(l) => {
+                self.advance();
+                Ok(Expr::Literal(l))
+            }
             Err(e) => Err(e),
         }
     }
 
     fn unary(&mut self) -> Result<Expr, ParseError> {
-        println!("unary");
         if self.match_token(vec![TokenKind::Bang, TokenKind::Minus]) {
             let operator: UnaryOp = match parse_unary_op(self.previous()) {
                 Ok(b) => b,
@@ -129,7 +129,6 @@ impl<'a> Parser<'a> {
     }
 
     fn factor(&mut self) -> Result<Expr, ParseError> {
-        println!("factor");
         let mut expr: Expr = match self.unary() {
             Ok(e) => e,
             Err(err) => return Err(err),
@@ -155,7 +154,6 @@ impl<'a> Parser<'a> {
     }
 
     fn term(&mut self) -> Result<Expr, ParseError> {
-        println!("term");
         let mut expr: Expr = match self.factor() {
             Ok(e) => e,
             Err(err) => return Err(err),
@@ -181,7 +179,6 @@ impl<'a> Parser<'a> {
     }
 
     fn comparison(&mut self) -> Result<Expr, ParseError> {
-        println!("comparison");
         let mut expr: Expr = match self.term() {
             Ok(e) => e,
             Err(err) => return Err(err),
@@ -212,7 +209,6 @@ impl<'a> Parser<'a> {
     }
 
     fn equality(&mut self) -> Result<Expr, ParseError> {
-        println!("Equality");
         let mut expr: Expr = match self.comparison() {
             Ok(e) => e,
             Err(err) => return Err(err),
@@ -238,7 +234,6 @@ impl<'a> Parser<'a> {
     }
 
     pub fn expression(&mut self) -> Result<Expr, ParseError> {
-        println!("Expression");
         match self.equality() {
             Ok(e) => Ok(e),
             Err(err) => return Err(err),
