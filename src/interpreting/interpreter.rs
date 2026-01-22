@@ -1,13 +1,49 @@
-use crate::{errors::interpreter_error::InterpreterError, interpreting::value::Value, parsing::ast::Expr};
+use crate::{
+    errors::interpreter_error::InterpreterError,
+    interpreting::value::Value,
+    parsing::ast::{Expr, Literal, UnaryOp},
+};
 
 struct Interpreter<'a> {
     expr: Expr,
 }
 
 impl<'a> Interpreter<'a> {
-    fn literal(&mut self) -> Result<Value, InterpreterError> {
-        
+    fn literal(&mut self, literal: Literal) -> Result<Value, InterpreterError> {
+        match literal {
+            Literal::Number(n) => Ok(Value::Number(n)),
+            Literal::StringLiteral(s) => Ok(Value::String(s)),
+            Literal::True => Ok(Value::Boolean(true)),
+            Literal::False => Ok(Value::Boolean(false)),
+            Literal::Null => Ok(Value::Null),
+            _ => Err(InterpreterError::CouldNotEval(literal.to_string())),
+        }
     }
 
-    fn is_truthy(&mut self, )
+    fn grouping(&mut self, Expr::Grouping { exp }: crate::Expr) -> Result<Value, InterpreterError> {
+        self.evaluate(exp)
+    }
+
+    fn eval_unary(
+        &mut self,
+        Expr::Unary { exp, op }: crate::Expr,
+    ) -> Result<Value, InterpreterError> {
+        let right = match self.evaluate(*exp) {
+            Ok(val) => val,
+            Err(e) => return Err(e),
+        };
+
+        match op {
+            UnaryOp::Minus => Ok(Value::Number(-right)),
+            UnaryOp::Bang => Ok(Value::Boolean(!self.is_truthy(right))),
+        }
+    }
+
+    pub fn evaluate(&mut self, exp: Expr) -> Result<Value, InterpreterError> {
+        Ok(Value::Number(1.0))
+    }
+
+    fn is_truthy(&mut self, val: Value) -> bool {
+        true
+    }
 }
