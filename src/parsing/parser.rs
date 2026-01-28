@@ -17,8 +17,8 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn peek(&mut self) -> &Token {
-        &self.tokens[self.current]
+    fn peek(&mut self) -> Token {
+        self.tokens[self.current].clone()
     }
 
     fn is_at_end(&mut self) -> bool {
@@ -258,7 +258,7 @@ impl<'a> Parser<'a> {
         Ok(Stmt::Print(expr))
     }
 
-    pub fn statement(&mut self) -> Result<Stmt, ParseError> {
+    fn statement(&mut self) -> Result<Stmt, ParseError> {
         if self.match_token(vec![TokenKind::Print]) {
             return match self.print_statement() {
                 Ok(s) => Ok(s),
@@ -267,16 +267,72 @@ impl<'a> Parser<'a> {
         }
         self.expression_statement()
     }
+
+    fn var_declaration(&mut self) -> Result<Stmt, ParseError> {
+        let name: String = match self.consume(
+            TokenKind::Identifier,
+            "Expect identifier after var declaration".to_string(),
+        ) {
+            Ok(t) => t.lexeme.to_string(),
+            Err(e) => return Err(e),
+        };
+
+        let mut initializer: Option<Expr> = None;
+        if self.match_token(vec![TokenKind::Equal]) {
+            initializer = match self.expression() {
+                Ok(e) => Some(e),
+                Err(err) => return Err(err),
+            };
+        }
+
+        self.consume(
+            TokenKind::Semicolon,
+            "Expect ; after declaration".to_string(),
+        );
+        match initializer {
+            Some(i) => Ok(Stmt::Var {
+                name: name,
+                value: i,
+            }),
+            None => Err(ParseError::InvalidDeclaration(name)),
+        }
+    }
+
+    pub fn declaration(&mut self) -> Result<Stmt, ParseError> {
+        //huge note here that this stops errors from being thrown and just evaluates what it can.
+        //flaw but useful right now for checking how the program works.
+        if self.match_token(vec![TokenKind::Var]) {
+            match self.var_declaration() {
+                Ok(stmt) => return Ok(stmt),
+                Err(e) => {
+                    self.synchronize();
+                    return Err(e);
+                }
+            }
+        }
+        match self.statement() {
+            Ok(stmt) => return Ok(stmt),
+            Err(e) => {
+                self.synchronize();
+                return Err(e);
+            }
+        }
+    }
 }
 
 pub fn parse_tokens(tokens: &Vec<Token>) -> Result<Vec<Stmt>, ParseError> {
     let mut parser: Parser = Parser::new(tokens);
     let mut statements: Vec<Stmt> = Vec::new();
+    let mut errors: Vec<ParseError> = Vec::new();
 
-    while !parser.is_at_end() {
-        match parser.statement() {
+    loop {
+        if parser.is_at_end() {
+            break;
+        }
+
+        match parser.declaration() {
             Ok(stmt) => statements.push(stmt),
-            Err(e) => return Err(e),
+            Err(e) => errors.push(e),
         };
     }
 
@@ -313,16 +369,16 @@ pub fn parse_unary_op(token: &Token) -> Result<UnaryOp, ParseError> {
     }
 }
 
-pub fn parse_literal(token: &Token) -> Result<Literal, ParseError> {
+pub fn parse_literal(token: Token) -> Result<Literal, ParseError> {
     match token.kind {
-        TokenKind::Number => match &token.literal {
+        TokenKind::Number => match token.literal {
             Some(l) => Ok(l.clone()),
             None => Err(ParseError::MissingValue {
                 val: token.lexeme.clone(),
                 line: token.line,
             }),
         },
-        TokenKind::StringLiteral => match &token.literal {
+        TokenKind::StringLiteral => match token.literal {
             Some(l) => Ok(l.clone()),
             None => Err(ParseError::MissingValue {
                 val: token.lexeme.clone(),
