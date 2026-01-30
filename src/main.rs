@@ -1,3 +1,4 @@
+mod environment;
 mod errors;
 mod interpreting;
 mod lexing;
