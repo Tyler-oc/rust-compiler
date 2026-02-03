@@ -1,6 +1,7 @@
 use std::error::Error;
 use std::fmt;
 
+use crate::lexing::token::Token;
 use crate::parsing::ast::Expr;
 
 #[derive(Debug)]
@@ -10,6 +11,7 @@ pub enum ParseError {
     InvalidGrouping(String),
     MissingValue { val: String, line: usize },
     InvalidDeclaration(String),
+    AssignmentError(Token),
 }
 
 impl std::fmt::Display for ParseError {
@@ -25,6 +27,9 @@ impl std::fmt::Display for ParseError {
             }
             ParseError::InvalidDeclaration(e) => {
                 write!(f, "Invalid declaration: {}", e)
+            }
+            ParseError::AssignmentError(t) => {
+                write!(f, "Assignment error {} on line {}", t.lexeme, t.line)
             }
         }
     }

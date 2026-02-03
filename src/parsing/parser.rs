@@ -236,8 +236,39 @@ impl<'a> Parser<'a> {
         Ok(expr)
     }
 
+    fn assignment(&mut self) -> Result<Expr, ParseError> {
+        let expr: Expr = match self.equality() {
+            Ok(e) => e,
+            Err(err) => return Err(err),
+        };
+
+        if self.match_token(vec![TokenKind::Equal]) {
+            let equals: Token = self.previous().clone();
+            let value: Expr = match self.assignment() {
+                Ok(v) => v,
+                Err(err) => return Err(err),
+            };
+
+            match expr {
+                Expr::Variable(t) => {
+                    return Ok(Expr::Assignment {
+                        name: t,
+                        value: Box::new(value),
+                    });
+                }
+                _ => return Err(ParseError::AssignmentError(equals)),
+            }
+        }
+
+        Ok(expr)
+    }
+
     fn expression(&mut self) -> Result<Expr, ParseError> {
-        match self.equality() {
+        // match self.equality() {
+        //     Ok(e) => Ok(e),
+        //     Err(err) => return Err(err),
+        // }
+        match self.assignment() {
             Ok(e) => Ok(e),
             Err(err) => return Err(err),
         }
