@@ -1,3 +1,5 @@
+use regex::CaptureNames;
+
 use crate::{
     environment::environment::Environment,
     errors::environment_error::EnvironmentError,
@@ -41,6 +43,13 @@ impl Interpreter {
             (Value::String(s1), Value::String(s2)) => Ok(s1 == s2),
             (Value::Boolean(b1), Value::Boolean(b2)) => Ok(b1 == b2),
             (_, _) => Err(RunTimeError::CouldNotEval("==".to_string())),
+        }
+    }
+
+    fn eval_var(&mut self, name: String) -> Result<Value, RunTimeError> {
+        match self.environment.get(name) {
+            Ok(val) => Ok(val),
+            Err(e) => Err(RunTimeError::EnvironmentError(e)),
         }
     }
 
@@ -135,6 +144,10 @@ impl Interpreter {
                 Err(e) => return Err(e),
             },
             Expr::Literal(literal) => match self.eval_literal(literal) {
+                Ok(val) => Ok(val),
+                Err(e) => return Err(e),
+            },
+            Expr::Variable(name) => match self.eval_var(name) {
                 Ok(val) => Ok(val),
                 Err(e) => return Err(e),
             },

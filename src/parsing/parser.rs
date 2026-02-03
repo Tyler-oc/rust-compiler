@@ -288,7 +288,7 @@ impl<'a> Parser<'a> {
             };
         }
 
-        self.consume(
+        let _ = self.consume(
             TokenKind::Semicolon,
             "Expect ; after declaration".to_string(),
         );
