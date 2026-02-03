@@ -2,9 +2,9 @@ use regex::CaptureNames;
 
 use crate::{
     environment::environment::Environment,
-    errors::environment_error::EnvironmentError,
-    errors::runtime_error::RunTimeError,
+    errors::{environment_error::EnvironmentError, runtime_error::RunTimeError},
     interpreting::value::Value,
+    lexing::token::Token,
     parsing::ast::{BinaryOp, Expr, Literal, Stmt, UnaryOp},
 };
 
@@ -46,8 +46,8 @@ impl Interpreter {
         }
     }
 
-    fn eval_var(&mut self, name: String) -> Result<Value, RunTimeError> {
-        match self.environment.get(name) {
+    fn eval_var(&mut self, name: Token) -> Result<Value, RunTimeError> {
+        match self.environment.get(name.lexeme) {
             Ok(val) => Ok(val),
             Err(e) => Err(RunTimeError::EnvironmentError(e)),
         }
@@ -178,10 +178,10 @@ impl Interpreter {
                 }
 
                 match val {
-                    Some(v) => self.environment.define(name.to_string(), v)?,
+                    Some(v) => self.environment.define(name.lexeme.to_string(), v)?,
                     None => {
                         return Err(RunTimeError::EnvironmentError(
-                            EnvironmentError::UndefinedVariable(name.to_string()),
+                            EnvironmentError::UndefinedVariable(name.lexeme.to_string()),
                         ));
                     }
                 }

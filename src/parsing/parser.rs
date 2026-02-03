@@ -102,7 +102,7 @@ impl<'a> Parser<'a> {
             });
         }
         if self.match_token(vec![TokenKind::Identifier]) {
-            return Ok(Expr::Variable(self.previous().lexeme.to_string()));
+            return Ok(Expr::Variable(self.previous().clone()));
         }
         match parse_literal(self.peek()) {
             Ok(l) => {
@@ -272,11 +272,11 @@ impl<'a> Parser<'a> {
     }
 
     fn var_declaration(&mut self) -> Result<Stmt, ParseError> {
-        let name: String = match self.consume(
+        let name: Token = match self.consume(
             TokenKind::Identifier,
             "Expect identifier after var declaration".to_string(),
         ) {
-            Ok(t) => t.lexeme.to_string(),
+            Ok(t) => t.clone(),
             Err(e) => return Err(e),
         };
 

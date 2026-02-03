@@ -1,11 +1,13 @@
 use std::fmt::write;
 
+use crate::lexing::token::Token;
+
 #[derive(Debug)]
 pub enum Stmt {
     Print(Expr),
     Expression(Expr),
     Var {
-        name: String,
+        name: Token,
         initializer: Option<Expr>,
     },
 }
@@ -25,8 +27,12 @@ pub enum Expr {
     Grouping {
         exp: Box<Expr>,
     },
+    Assignment {
+        name: Token,
+        value: Box<Expr>,
+    },
     Literal(Literal),
-    Variable(String),
+    Variable(Token),
 }
 
 #[derive(Debug, Clone)]
@@ -69,8 +75,10 @@ impl std::fmt::Display for Stmt {
             Stmt::Expression(e) => write!(f, "{}", e), //normally don't display anything but nice for testing
             Stmt::Print(e) => write!(f, "{}", e),
             Stmt::Var { name, initializer } => match initializer {
-                Some(initializer) => write!(f, "variable {} with value {}", name, initializer),
-                None => write!(f, "variable {} with no assigned value", name),
+                Some(initializer) => {
+                    write!(f, "variable {} with value {}", name.lexeme, initializer)
+                }
+                None => write!(f, "variable {} with no assigned value", name.lexeme),
             },
         }
     }
@@ -88,11 +96,14 @@ impl std::fmt::Display for Expr {
             Expr::Grouping { exp } => {
                 write!(f, "(group {})", exp)
             }
+            Expr::Assignment { name, value } => {
+                write!(f, "({} -> {})", name.lexeme, value)
+            }
             Expr::Literal(val) => {
                 write!(f, "{}", val)
             }
             Expr::Variable(t) => {
-                write!(f, "{}", t)
+                write!(f, "({})", t.lexeme)
             }
         }
     }
