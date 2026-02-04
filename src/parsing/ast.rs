@@ -29,7 +29,7 @@ pub enum Expr {
     },
     Assignment {
         name: Token,
-        value: Box<Expr>,
+        exp: Box<Expr>,
     },
     Literal(Literal),
     Variable(Token),
@@ -96,8 +96,8 @@ impl std::fmt::Display for Expr {
             Expr::Grouping { exp } => {
                 write!(f, "(group {})", exp)
             }
-            Expr::Assignment { name, value } => {
-                write!(f, "({} -> {})", name.lexeme, value)
+            Expr::Assignment { name, exp } => {
+                write!(f, "({} -> {})", name.lexeme, exp)
             }
             Expr::Literal(val) => {
                 write!(f, "{}", val)

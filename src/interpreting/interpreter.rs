@@ -46,6 +46,16 @@ impl Interpreter {
         }
     }
 
+    fn eval_assignment(&mut self, name: Token, exp: Expr) -> Result<Value, RunTimeError> {
+        let value: Value = match self.evaluate(exp) {
+            Ok(v) => v,
+            Err(e) => return Err(e),
+        };
+
+        self.environment.assign(name.lexeme, value.clone())?;
+        Ok(value)
+    }
+
     fn eval_var(&mut self, name: Token) -> Result<Value, RunTimeError> {
         match self.environment.get(name.lexeme) {
             Ok(val) => Ok(val),
@@ -151,6 +161,10 @@ impl Interpreter {
                 Ok(val) => Ok(val),
                 Err(e) => return Err(e),
             },
+            Expr::Assignment { name, exp } => match self.eval_assignment(name, *exp) {
+                Ok(val) => Ok(val),
+                Err(e) => return Err(e),
+            },
             _ => Err(RunTimeError::CouldNotEval(exp.to_string())),
         }
     }
@@ -201,7 +215,7 @@ impl Interpreter {
 }
 
 pub fn interpret(statements: Vec<Stmt>) -> Result<(), RunTimeError> {
-    let environment: Environment = Environment::new();
+    let environment: Environment = Environment::new(None);
     let mut interpreter: Interpreter = Interpreter::new(environment);
 
     for statement in statements.iter() {

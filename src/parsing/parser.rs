@@ -244,8 +244,8 @@ impl<'a> Parser<'a> {
 
         if self.match_token(vec![TokenKind::Equal]) {
             let equals: Token = self.previous().clone();
-            let value: Expr = match self.assignment() {
-                Ok(v) => v,
+            let exp: Expr = match self.assignment() {
+                Ok(e) => e,
                 Err(err) => return Err(err),
             };
 
@@ -253,7 +253,7 @@ impl<'a> Parser<'a> {
                 Expr::Variable(t) => {
                     return Ok(Expr::Assignment {
                         name: t,
-                        value: Box::new(value),
+                        exp: Box::new(exp),
                     });
                 }
                 _ => return Err(ParseError::AssignmentError(equals)),

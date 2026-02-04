@@ -4,12 +4,14 @@ use crate::{errors::environment_error::EnvironmentError, interpreting::value::Va
 
 pub(crate) struct Environment {
     values: HashMap<String, Value>,
+    outer_environment: Option<Box<Environment>>,
 }
 
 impl Environment {
-    pub fn new() -> Self {
+    pub fn new(outer_environment: Option<Environment>) -> Self {
         Environment {
             values: HashMap::new(),
+            outer_environment: outer_environment.map(Box::new),
         }
     }
 
@@ -25,9 +27,34 @@ impl Environment {
     }
 
     pub fn get(&mut self, name: String) -> Result<Value, EnvironmentError> {
-        match self.values.get(&name) {
-            Some(v) => Ok(v.clone()),
-            None => Err(EnvironmentError::UndefinedVariable(name)),
+        if let Some(stored_val) = self.values.get(&name) {
+            return Ok(stored_val.clone());
         }
+        match &self.outer_environment {
+            Some(env) => {
+                if let Some(outer_stored_val) = env.values.get(&name) {
+                    return Ok(outer_stored_val.clone());
+                }
+                return Err(EnvironmentError::UndefinedVariable(name));
+            }
+            None => return Err(EnvironmentError::UndefinedVariable(name)),
+        }
+    }
+
+    pub fn assign(&mut self, name: String, val: Value) -> Result<(), EnvironmentError> {
+        if let Some(stored_val) = self.values.get_mut(&name) {
+            *stored_val = val;
+            return Ok(());
+        }
+        match &mut self.outer_environment {
+            Some(env) => {
+                if let Some(outer_stored_val) = env.values.get_mut(&name) {
+                    *outer_stored_val = val;
+                    return Ok(());
+                }
+            }
+            None => return Err(EnvironmentError::UndefinedVariable(name)),
+        }
+        Err(EnvironmentError::UndefinedVariable(name))
     }
 }
