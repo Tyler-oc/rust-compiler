@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
 use crate::{errors::environment_error::EnvironmentError, interpreting::value::Value};
-
+#[derive(Clone)]
 pub(crate) struct Environment {
-    values: HashMap<String, Value>,
-    outer_environment: Option<Box<Environment>>,
+    pub(crate) values: HashMap<String, Value>,
+    pub(crate) outer_environment: Option<Box<Environment>>,
 }
 
 impl Environment {
@@ -12,6 +12,16 @@ impl Environment {
         Environment {
             values: HashMap::new(),
             outer_environment: outer_environment.map(Box::new),
+        }
+    }
+
+    pub fn new_all_initialized(
+        values: HashMap<String, Value>,
+        outer_environment: Option<Box<Environment>>,
+    ) -> Self {
+        Environment {
+            values: values,
+            outer_environment: outer_environment,
         }
     }
 
@@ -30,13 +40,8 @@ impl Environment {
         if let Some(stored_val) = self.values.get(&name) {
             return Ok(stored_val.clone());
         }
-        match &self.outer_environment {
-            Some(env) => {
-                if let Some(outer_stored_val) = env.values.get(&name) {
-                    return Ok(outer_stored_val.clone());
-                }
-                return Err(EnvironmentError::UndefinedVariable(name));
-            }
+        match &mut self.outer_environment {
+            Some(env) => return env.get(name),
             None => return Err(EnvironmentError::UndefinedVariable(name)),
         }
     }

@@ -6,6 +6,7 @@ use crate::lexing::token::Token;
 pub enum Stmt {
     Print(Expr),
     Expression(Expr),
+    Block(Vec<Stmt>),
     Var {
         name: Token,
         initializer: Option<Expr>,
@@ -74,6 +75,13 @@ impl std::fmt::Display for Stmt {
         match self {
             Stmt::Expression(e) => write!(f, "{}", e), //normally don't display anything but nice for testing
             Stmt::Print(e) => write!(f, "{}", e),
+            Stmt::Block(s) => {
+                let mut output = String::new();
+                for statement in s.iter() {
+                    output.push_str(&statement.to_string());
+                }
+                write!(f, "{}", output)
+            }
             Stmt::Var { name, initializer } => match initializer {
                 Some(initializer) => {
                     write!(f, "variable {} with value {}", name.lexeme, initializer)

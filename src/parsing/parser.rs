@@ -279,7 +279,10 @@ impl<'a> Parser<'a> {
             Ok(e) => e,
             Err(err) => return Err(err),
         };
-        self.consume(TokenKind::Semicolon, "Expect ; after statement".to_string());
+        match self.consume(TokenKind::Semicolon, "Expect ; after statement".to_string()) {
+            Ok(_) => (),
+            Err(err) => return Err(err),
+        };
         Ok(Stmt::Expression(expr))
     }
 
@@ -288,14 +291,39 @@ impl<'a> Parser<'a> {
             Ok(e) => e,
             Err(err) => return Err(err),
         };
-        self.consume(TokenKind::Semicolon, "Expect ; after statement".to_string());
+        match self.consume(TokenKind::Semicolon, "Expect ; after statement".to_string()) {
+            Ok(_) => (),
+            Err(err) => return Err(err),
+        };
         Ok(Stmt::Print(expr))
+    }
+
+    fn block(&mut self) -> Result<Vec<Stmt>, ParseError> {
+        let mut statements: Vec<Stmt> = Vec::new();
+
+        while !self.check(TokenKind::RightBrace) && !self.is_at_end() {
+            match self.declaration() {
+                Ok(s) => statements.push(s),
+                Err(e) => return Err(e),
+            }
+        }
+        match self.consume(TokenKind::RightBrace, "Expect closing brace".to_string()) {
+            Ok(_) => (),
+            Err(err) => return Err(err),
+        };
+        return Ok(statements);
     }
 
     fn statement(&mut self) -> Result<Stmt, ParseError> {
         if self.match_token(vec![TokenKind::Print]) {
             return match self.print_statement() {
                 Ok(s) => Ok(s),
+                Err(e) => Err(e),
+            };
+        }
+        if self.match_token(vec![TokenKind::LeftBrace]) {
+            return match self.block() {
+                Ok(statements) => Ok(Stmt::Block(statements)),
                 Err(e) => Err(e),
             };
         }
@@ -319,10 +347,13 @@ impl<'a> Parser<'a> {
             };
         }
 
-        let _ = self.consume(
+        match self.consume(
             TokenKind::Semicolon,
             "Expect ; after declaration".to_string(),
-        );
+        ) {
+            Ok(_) => (),
+            Err(err) => return Err(err),
+        };
         Ok(Stmt::Var {
             name: name,
             initializer: initializer,

@@ -139,6 +139,31 @@ impl Interpreter {
         }
     }
 
+    fn eval_block(
+        &mut self,
+        statements: &Vec<Stmt>,
+        environment: Environment,
+    ) -> Result<(), RunTimeError> {
+        let previous = Environment::new_all_initialized(
+            self.environment.values.clone(),
+            self.environment.outer_environment.clone(),
+        );
+
+        self.environment = environment;
+
+        for statement in statements.iter() {
+            match self.execute(statement) {
+                Ok(_) => (),
+                Err(err) => {
+                    self.environment = previous; //rollback env switch
+                    return Err(err);
+                }
+            };
+        }
+        self.environment = previous;
+        Ok(())
+    }
+
     pub fn evaluate(&mut self, exp: Expr) -> Result<Value, RunTimeError> {
         match exp {
             Expr::Binary { left, op, right } => match self.eval_binary(*left, op, *right) {
@@ -179,6 +204,18 @@ impl Interpreter {
                 Ok(e) => println!("{}", e),
                 Err(err) => return Err(err),
             },
+            Stmt::Block(statements) => {
+                match self.eval_block(
+                    statements,
+                    Environment::new(Some(Environment::new_all_initialized(
+                        self.environment.values.clone(),
+                        self.environment.outer_environment.clone(),
+                    ))),
+                ) {
+                    Ok(_) => (),
+                    Err(e) => return Err(e),
+                }
+            }
             Stmt::Var { name, initializer } => {
                 let val;
                 match initializer {
