@@ -2,11 +2,16 @@ use std::fmt::write;
 
 use crate::lexing::token::Token;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Stmt {
     Print(Expr),
     Expression(Expr),
     Block(Vec<Stmt>),
+    If {
+        condition: Expr,
+        then_branch: Box<Stmt>,
+        else_branch: Box<Option<Stmt>>,
+    },
     Var {
         name: Token,
         initializer: Option<Expr>,
@@ -23,6 +28,11 @@ pub enum Expr {
     },
     Unary {
         op: UnaryOp,
+        right: Box<Expr>,
+    },
+    Logical {
+        left: Box<Expr>,
+        op: LogicalOp,
         right: Box<Expr>,
     },
     Grouping {
@@ -49,14 +59,18 @@ pub enum BinaryOp {
     BangEqual,
     LessEqual,
     LessThan,
-    And,
-    Or,
 }
 
 #[derive(Debug, Clone)]
 pub enum UnaryOp {
     Bang,
     Minus,
+}
+
+#[derive(Debug, Clone)]
+pub enum LogicalOp {
+    And,
+    Or,
 }
 
 #[derive(Debug, Clone)]
@@ -82,6 +96,18 @@ impl std::fmt::Display for Stmt {
                 }
                 write!(f, "{}", output)
             }
+            Stmt::If {
+                condition,
+                then_branch,
+                else_branch,
+            } => match &**else_branch {
+                Some(else_branch) => write!(
+                    f,
+                    "if {} then {} else {}",
+                    condition, then_branch, else_branch
+                ),
+                None => write!(f, "if {} then {}", condition, then_branch),
+            },
             Stmt::Var { name, initializer } => match initializer {
                 Some(initializer) => {
                     write!(f, "variable {} with value {}", name.lexeme, initializer)
@@ -100,6 +126,9 @@ impl std::fmt::Display for Expr {
             }
             Expr::Unary { op, right } => {
                 write!(f, "({}{})", op, right)
+            }
+            Expr::Logical { left, op, right } => {
+                write!(f, "{}{}{}", left, op, right)
             }
             Expr::Grouping { exp } => {
                 write!(f, "(group {})", exp)
@@ -124,8 +153,6 @@ impl std::fmt::Display for BinaryOp {
             BinaryOp::Minus => "-",
             BinaryOp::Star => "*",
             BinaryOp::Slash => "/",
-            BinaryOp::And => "&&",
-            BinaryOp::Or => "||",
             BinaryOp::Equal => "=",
             BinaryOp::GreaterEqual => ">=",
             BinaryOp::GreaterThan => ">",
@@ -143,6 +170,16 @@ impl std::fmt::Display for UnaryOp {
         let s = match self {
             UnaryOp::Bang => "!",
             UnaryOp::Minus => "-",
+        };
+        write!(f, "{}", s)
+    }
+}
+
+impl std::fmt::Display for LogicalOp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            LogicalOp::And => "&&",
+            LogicalOp::Or => "||",
         };
         write!(f, "{}", s)
     }

@@ -139,6 +139,33 @@ impl Interpreter {
         }
     }
 
+    fn eval_if(
+        &mut self,
+        condition: Expr,
+        then_branch: Stmt,
+        else_branch: Option<Stmt>,
+    ) -> Result<(), RunTimeError> {
+        let condition = match self.evaluate(condition) {
+            Ok(e) => e,
+            Err(err) => return Err(err),
+        };
+        if self.is_truthy(condition) {
+            let _ = match self.execute(&then_branch) {
+                Ok(_) => (),
+                Err(e) => return Err(e),
+            };
+        } else {
+            let _ = match else_branch {
+                Some(else_branch) => match self.execute(&else_branch) {
+                    Ok(_) => (),
+                    Err(e) => return Err(e),
+                },
+                None => (),
+            };
+        }
+        Ok(())
+    }
+
     fn eval_block(
         &mut self,
         statements: &Vec<Stmt>,
@@ -216,6 +243,18 @@ impl Interpreter {
                     Err(e) => return Err(e),
                 }
             }
+            Stmt::If {
+                condition,
+                then_branch,
+                else_branch,
+            } => match self.eval_if(
+                condition.clone(),
+                (**then_branch).clone(),
+                (**else_branch).clone(),
+            ) {
+                Ok(_) => (),
+                Err(e) => return Err(e),
+            },
             Stmt::Var { name, initializer } => {
                 let val;
                 match initializer {

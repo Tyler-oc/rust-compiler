@@ -1,7 +1,7 @@
 use crate::{
     errors::parse_error::ParseError,
     lexing::token::{Token, TokenKind},
-    parsing::ast::{BinaryOp, Expr, Literal, Stmt, UnaryOp},
+    parsing::ast::{BinaryOp, Expr, Literal, LogicalOp, Stmt, UnaryOp},
 };
 
 struct Parser<'a> {
@@ -236,15 +236,67 @@ impl<'a> Parser<'a> {
         Ok(expr)
     }
 
+    fn and(&mut self) -> Result<Expr, ParseError> {
+        let mut expr: Expr = match self.equality() {
+            Ok(e) => e,
+            Err(err) => return Err(err),
+        };
+
+        while self.match_token(vec![TokenKind::And]) {
+            let and: LogicalOp = match parse_logical_op(self.previous()) {
+                Ok(l) => l,
+                Err(err) => return Err(err),
+            };
+            let right: Expr = match self.equality() {
+                Ok(e) => e,
+                Err(err) => return Err(err),
+            };
+
+            expr = Expr::Logical {
+                left: Box::new(expr),
+                op: and,
+                right: Box::new(right),
+            };
+        }
+
+        Ok(expr)
+    }
+
+    fn or(&mut self) -> Result<Expr, ParseError> {
+        let mut expr: Expr = match self.and() {
+            Ok(e) => e,
+            Err(err) => return Err(err),
+        };
+
+        while self.match_token(vec![TokenKind::Or]) {
+            let or: LogicalOp = match parse_logical_op(self.previous()) {
+                Ok(t) => t,
+                Err(err) => return Err(err),
+            };
+            let right: Expr = match self.and() {
+                Ok(e) => e,
+                Err(err) => return Err(err),
+            };
+
+            expr = Expr::Logical {
+                left: Box::new(expr),
+                op: or,
+                right: Box::new(right),
+            };
+        }
+
+        Ok(expr)
+    }
+
     fn assignment(&mut self) -> Result<Expr, ParseError> {
-        let expr: Expr = match self.equality() {
+        let expr: Expr = match self.or() {
             Ok(e) => e,
             Err(err) => return Err(err),
         };
 
         if self.match_token(vec![TokenKind::Equal]) {
             let equals: Token = self.previous().clone();
-            let exp: Expr = match self.assignment() {
+            let exp: Expr = match self.or() {
                 Ok(e) => e,
                 Err(err) => return Err(err),
             };
@@ -264,10 +316,6 @@ impl<'a> Parser<'a> {
     }
 
     fn expression(&mut self) -> Result<Expr, ParseError> {
-        // match self.equality() {
-        //     Ok(e) => Ok(e),
-        //     Err(err) => return Err(err),
-        // }
         match self.assignment() {
             Ok(e) => Ok(e),
             Err(err) => return Err(err),
@@ -298,6 +346,46 @@ impl<'a> Parser<'a> {
         Ok(Stmt::Print(expr))
     }
 
+    fn if_statement(&mut self) -> Result<Stmt, ParseError> {
+        match self.consume(
+            TokenKind::LeftParen,
+            "Expect ( after if statement".to_string(),
+        ) {
+            Ok(_) => (),
+            Err(e) => return Err(e),
+        };
+        let condition = match self.expression() {
+            Ok(e) => e,
+            Err(err) => return Err(err),
+        };
+        match self.consume(
+            TokenKind::RightParen,
+            "Expect ( after if statement".to_string(),
+        ) {
+            Ok(_) => (),
+            Err(e) => return Err(e),
+        };
+
+        let then_branch = match self.statement() {
+            Ok(s) => s,
+            Err(e) => return Err(e),
+        };
+        let mut else_branch: Option<Stmt> = None;
+
+        if self.match_token(vec![TokenKind::Else]) {
+            else_branch = match self.statement() {
+                Ok(s) => Some(s),
+                Err(e) => return Err(e),
+            };
+        }
+
+        Ok(Stmt::If {
+            condition: condition,
+            then_branch: Box::new(then_branch),
+            else_branch: Box::new(else_branch),
+        })
+    }
+
     fn block(&mut self) -> Result<Vec<Stmt>, ParseError> {
         let mut statements: Vec<Stmt> = Vec::new();
 
@@ -315,6 +403,12 @@ impl<'a> Parser<'a> {
     }
 
     fn statement(&mut self) -> Result<Stmt, ParseError> {
+        if self.match_token(vec![TokenKind::If]) {
+            return match self.if_statement() {
+                Ok(s) => Ok(s),
+                Err(e) => Err(e),
+            };
+        }
         if self.match_token(vec![TokenKind::Print]) {
             return match self.print_statement() {
                 Ok(s) => Ok(s),
@@ -403,8 +497,6 @@ pub fn parse_tokens(tokens: &Vec<Token>) -> Result<Vec<Stmt>, ParseError> {
 
 pub fn parse_binary_op(token: &Token) -> Result<BinaryOp, ParseError> {
     match token.kind {
-        TokenKind::And => Ok(BinaryOp::And),
-        TokenKind::Or => Ok(BinaryOp::Or),
         TokenKind::Plus => Ok(BinaryOp::Plus),
         TokenKind::Minus => Ok(BinaryOp::Minus),
         TokenKind::Star => Ok(BinaryOp::Star),
@@ -427,6 +519,16 @@ pub fn parse_unary_op(token: &Token) -> Result<UnaryOp, ParseError> {
         TokenKind::Bang => Ok(UnaryOp::Bang),
         _ => Err(ParseError::InvalidConversion(
             "could not convert to unary operator".to_string(),
+        )),
+    }
+}
+
+pub fn parse_logical_op(token: &Token) -> Result<LogicalOp, ParseError> {
+    match token.kind {
+        TokenKind::And => Ok(LogicalOp::And),
+        TokenKind::Or => Ok(LogicalOp::Or),
+        _ => Err(ParseError::InvalidConversion(
+            "could not convert to logical operator".to_string(),
         )),
     }
 }
