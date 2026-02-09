@@ -5,7 +5,7 @@ use crate::{
     errors::{environment_error::EnvironmentError, runtime_error::RunTimeError},
     interpreting::value::Value,
     lexing::token::Token,
-    parsing::ast::{BinaryOp, Expr, Literal, Stmt, UnaryOp},
+    parsing::ast::{BinaryOp, Expr, Literal, LogicalOp, Stmt, UnaryOp},
 };
 
 struct Interpreter {
@@ -135,8 +135,34 @@ impl Interpreter {
                 Value::Number(n) => Ok(Value::Number(-n)),
                 _ => Err(RunTimeError::CouldNotEval("- unary".to_string())),
             },
-            UnaryOp::Bang => Ok(Value::Boolean(!self.is_truthy(right))),
+            UnaryOp::Bang => Ok(Value::Boolean(!self.is_truthy(&right))),
         }
+    }
+
+    fn eval_logical(
+        &mut self,
+        left: Expr,
+        op: LogicalOp,
+        right: Expr,
+    ) -> Result<Value, RunTimeError> {
+        let left_val = match self.evaluate(left) {
+            Ok(v) => v,
+            Err(err) => return Err(err),
+        };
+
+        match op {
+            LogicalOp::Or => {
+                if self.is_truthy(&left_val) {
+                    return Ok(left_val);
+                }
+            }
+            _ => (),
+        };
+        if !self.is_truthy(&left_val) {
+            return Ok(left_val);
+        }
+
+        self.evaluate(right)
     }
 
     fn eval_if(
@@ -149,7 +175,7 @@ impl Interpreter {
             Ok(e) => e,
             Err(err) => return Err(err),
         };
-        if self.is_truthy(condition) {
+        if self.is_truthy(&condition) {
             let _ = match self.execute(&then_branch) {
                 Ok(_) => (),
                 Err(e) => return Err(e),
@@ -200,6 +226,10 @@ impl Interpreter {
             Expr::Unary { op, right } => match self.eval_unary(op, *right) {
                 Ok(val) => Ok(val),
                 Err(e) => return Err(e),
+            },
+            Expr::Logical { left, op, right } => match self.eval_logical(*left, op, *right) {
+                Ok(val) => Ok(val),
+                Err(e) => Err(e),
             },
             Expr::Grouping { exp } => match self.eval_grouping(*exp) {
                 Ok(val) => Ok(val),
@@ -280,10 +310,10 @@ impl Interpreter {
         Ok(())
     }
 
-    fn is_truthy(&mut self, val: Value) -> bool {
+    fn is_truthy(&mut self, val: &Value) -> bool {
         match val {
             Value::Null => false,
-            Value::Boolean(b) => b,
+            Value::Boolean(b) => *b,
             Value::Number(0.0) => false,
             _ => true,
         }
